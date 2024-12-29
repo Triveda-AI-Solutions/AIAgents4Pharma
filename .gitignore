@@ -164,3 +164,7 @@ experiment/web/vectordb
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Lang Graph Agents
+*.env*
+.DS_Store

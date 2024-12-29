@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+      "talk2biomodels": "./talk2biomodels/agent_t2b.py:app"
+    },
+    "env": ".env"
+}

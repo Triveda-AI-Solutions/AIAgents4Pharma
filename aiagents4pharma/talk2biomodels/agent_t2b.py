@@ -1,5 +1,12 @@
+import sys
+import os
+current_dir = os.path.dirname(__file__)
+package_path = os.path.join(current_dir, "..", "..")
+package_path = os.path.abspath(os.path.normpath(package_path))
+sys.path.append(package_path)
+
 from langchain_core.runnables import Runnable
-from aiagents4pharma.agent_state.t2b_state import T2bState
+from aiagents4pharma.agent_state import T2bState
 
 
 class AssistantBaseClass:
@@ -42,30 +49,28 @@ def create_tool_node_with_fallback(tools: list) -> dict:
         [RunnableLambda(handle_tool_error)], exception_key="error"
     )
 
-from chains import t2b_chain_with_all_tools, all_tools
-
-
+from talk2biomodels.chains import t2b_chain_with_all_tools, all_tools
 
 assistant_with_all_tools_instance = AssistantBaseClass(t2b_chain_with_all_tools)
     
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import tools_condition
-from aiagents4pharma.agent_state.t2b_state import T2bState as State
+from aiagents4pharma.agent_state.t2b_state import T2bState
 
-builder = StateGraph(State)
+builder = StateGraph(T2bState)
 
 
 # Define nodes: these do the work
-builder.add_node("single_agent", assistant_with_all_tools_instance)
+builder.add_node("t2b_agent", assistant_with_all_tools_instance)
 builder.add_node("tools", create_tool_node_with_fallback(all_tools))
 # Define edges: these determine how the control flow moves
-builder.add_edge(START, "single_agent")
+builder.add_edge(START, "t2b_agent")
 builder.add_conditional_edges(
-    "single_agent",
+    "t2b_agent",
     tools_condition,
 )
-builder.add_edge("tools", "single_agent")
+builder.add_edge("tools", "t2b_agent")
 
 memory = MemorySaver()
 app = builder.compile(checkpointer=memory)

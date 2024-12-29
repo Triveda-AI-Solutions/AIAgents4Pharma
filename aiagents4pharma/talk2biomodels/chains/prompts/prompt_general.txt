@@ -80,7 +80,7 @@ sequence.
 
 ---
 
-**Input:** {input}
+**Input:** {messages}
 
 Execute the tasks step by step to address the user's 
 query comprehensively.
