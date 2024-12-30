@@ -49,7 +49,7 @@ def create_tool_node_with_fallback(tools: list) -> dict:
         [RunnableLambda(handle_tool_error)], exception_key="error"
     )
 
-from talk2biomodels.chains import t2b_chain_with_all_tools, all_tools
+from aiagents4pharma.talk2biomodels.chains import t2b_chain_with_all_tools, all_tools
 
 assistant_with_all_tools_instance = AssistantBaseClass(t2b_chain_with_all_tools)
     

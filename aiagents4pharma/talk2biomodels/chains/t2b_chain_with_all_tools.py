@@ -3,12 +3,10 @@ from datetime import datetime
 from langchain_core.prompts import ChatPromptTemplate
 from aiagents4pharma.talk2biomodels.tools import SearchModelsTool,SimulateModelTool,AskQuestionTool,PlotImageTool,ModelDescriptionTool,CustomPlotterTool,FetchParametersTool
 
-# Load the prompt for the main agent
-with open('talk2biomodels/chains/prompts/prompt_general.txt', 'r', encoding='utf-8') as file:
-    prompt_content = file.read()
+from aiagents4pharma.talk2biomodels.chains.prompts import prompt_general, prompt_ask_question, prompt_model_description
 
 assistant_prompt = ChatPromptTemplate.from_messages([
-        ("system", prompt_content),
+        ("system", prompt_general),
         ("placeholder", "{messages}")
     ])
 
@@ -16,17 +14,13 @@ assistant_prompt = ChatPromptTemplate.from_messages([
 ST_SYS_BIOMODEL_KEY = "last_model_object"
 
 ask_question_tool = AskQuestionTool(st_session_key=ST_SYS_BIOMODEL_KEY)
-with open('talk2biomodels/chains/prompts/prompt_ask_question.txt', 'r', encoding='utf-8') as file:
-    prompt_content = file.read()
 ask_question_tool.metadata = {
-    "prompt": prompt_content
+    "prompt": prompt_ask_question
 }
 
 model_description_tool = ModelDescriptionTool(st_session_key=ST_SYS_BIOMODEL_KEY)
-with open('talk2biomodels/chains/prompts/prompt_model_description.txt', 'r', encoding='utf-8') as file:
-    prompt_content = file.read()
 model_description_tool.metadata = {
-    "prompt": prompt_content
+    "prompt": prompt_model_description
 }
 
 
@@ -39,5 +33,4 @@ all_tools = [
     CustomPlotterTool(st_session_key=ST_SYS_BIOMODEL_KEY),
     FetchParametersTool(st_session_key=ST_SYS_BIOMODEL_KEY)
 ]
-print(assistant_prompt)
 t2b_chain_with_all_tools = assistant_prompt | llm.bind_tools(all_tools)

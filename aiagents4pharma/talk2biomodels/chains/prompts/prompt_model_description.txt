@@ -1,4 +1,0 @@
-Use the following description:{description}
-to answer the question: {question}.
-If the user asks for the original description, provide the
-just the description {description} as the answer.
