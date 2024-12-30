@@ -70,7 +70,7 @@ builder.add_conditional_edges(
     "t2b_agent",
     tools_condition,
 )
-builder.add_edge("tools", "t2b_agent")
+builder.add_edge("tools", END)
 
 memory = MemorySaver()
 app = builder.compile(checkpointer=memory)
