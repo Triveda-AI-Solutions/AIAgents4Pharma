@@ -168,3 +168,4 @@ experiment/web/vectordb
 # Lang Graph Agents
 *.env*
 .DS_Store
+simulation_results.csv

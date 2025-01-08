@@ -1,5 +1,4 @@
 from aiagents4pharma.llms.openai_llm import gpt4_turbo_llm as llm
-from datetime import datetime
 from langchain_core.prompts import ChatPromptTemplate
 from aiagents4pharma.talk2biomodels.tools import SearchModelsTool,SimulateModelTool,AskQuestionTool,PlotImageTool,ModelDescriptionTool,CustomPlotterTool,FetchParametersTool
 
@@ -18,7 +17,7 @@ ask_question_tool.metadata = {
     "prompt": prompt_ask_question
 }
 
-model_description_tool = ModelDescriptionTool(st_session_key=ST_SYS_BIOMODEL_KEY)
+model_description_tool = ModelDescriptionTool()
 model_description_tool.metadata = {
     "prompt": prompt_model_description
 }

@@ -11,6 +11,8 @@ load_dotenv()
 from aiagents4pharma.talk2biomodels.agent_t2b import app
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage,ChatMessage
 import uuid
+import pandas as pd
+import plotly.express as px
 from langchain_core.tracers.context import collect_runs
 import streamlit as st
 from streamlit_feedback import streamlit_feedback
@@ -18,7 +20,8 @@ from utils import check_login, render_plotly, get_random_spinner_text, _submit_f
 st.set_page_config(page_title="Talk2BioModels", page_icon="🤖", layout="wide")
 st.logo(image="./app/frontend/VPE.png", link="https://www.github.com/virtualpatientengine")
 
-st.session_state["last_model_object"] = None
+# Set the streamlit session key for the sys bio model
+ST_SYS_BIOMODEL_KEY = "last_model_object"
 
 # Check loging if .streamlit/secrets.toml exists
 if os.path.exists(".streamlit/secrets.toml"):
@@ -49,39 +52,41 @@ if "OPENAI_API_KEY" not in os.environ:
     st.stop()
 
 
-# Main layout of the app split into two columns
-main_col1, main_col2 = st.columns([3, 7])  
-# First column
-with main_col1:
-    with st.container(border=True):
-        # Title
-        st.write("""
-            <h3 style='margin: 0px; padding-bottom: 10px; font-weight: bold;'>
-            🤖 Talk2BioModels
-            </h3>
-            """,
-            unsafe_allow_html=True)
 
-        # LLM panel
-        llms = ["gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
-        llm_option = st.selectbox(
-            "Pick an LLM to power the agent",
-            llms,
-            index=0,
-            key="st_selectbox_llm"
+
+
+# Title
+st.write("""
+    <h3 style='margin: 0px;font-weight: bold;'>
+    🤖 Talk2BioModels
+    </h3>
+    """,
+    unsafe_allow_html=True)
+
+sel_col1,sel_col2 = st.columns([4, 7]) 
+with sel_col1:
+    # LLM panel
+    llms = ["gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+    llm_option = st.selectbox(
+        "Pick an LLM to power the agent",
+        llms,
+        index=0,
+        key="st_selectbox_llm"
+    )
+with sel_col2:
+    # Upload files
+    uploaded_file = st.file_uploader(
+        "Upload an XML/SBML file",
+        accept_multiple_files=False,
+        type=["xml", "sbml"],
+        help='''Upload an XML/SBML file to simulate a biological model, \
+            and ask questions about the simulation results.'''
         )
 
-        # Upload files
-        uploaded_file = st.file_uploader(
-            "Upload an XML/SBML file",
-            accept_multiple_files=False,
-            type=["xml", "sbml"],
-            help='''Upload an XML/SBML file to simulate a biological model, \
-                and ask questions about the simulation results.'''
-            )
+# Main layout of the app split into two columns
+main_col2,main_col3 = st.columns([4, 7])  
 
-    with st.container(border=False, height=500):
-        prompt = st.chat_input("Say something ...", key="st_chat_input")
+prompt = st.chat_input("Say something ...", key="st_chat_input")
 # Second column
 with main_col2:
     # Chat history panel
@@ -106,8 +111,8 @@ with main_col2:
                             use_container_width = True,
                             key=f"dataframe_{count}")
         if prompt:
-            if "last_model_object" not in st.session_state:
-                st.session_state["last_model_object"] = None
+            if ST_SYS_BIOMODEL_KEY not in st.session_state:
+                st.session_state[ST_SYS_BIOMODEL_KEY] = None
             # Create a key 'uploaded_file' to read the uploaded file
             if uploaded_file:
                 st.session_state.sbml_file_path = uploaded_file.read().decode("utf-8")
@@ -171,18 +176,6 @@ with main_col2:
                         # Display the response
                         st.markdown(response["messages"][-1].content)
                         st.empty()
-            print("="*50)
-            print("************ session_state ************")
-            for k,v in st.session_state.items():
-                if k == "messages":
-                    print("+++ messages +++")
-                    for msg in v:
-                        print("+++")
-                        print(msg)
-                        print("+++")
-                print(k , " ::: ", v)
-                print("-"*25)
-            print("="*50)
         # Collect feedback and display the thumbs feedback
         if st.session_state.get("run_id"):
             feedback = streamlit_feedback(
@@ -192,3 +185,22 @@ with main_col2:
                 key=f"feedback_{st.session_state.run_id}"
             )
             # print (feedback)
+    
+with main_col3:
+    st.write("#### 📊 Model Simulation Results")
+    # check the csv file
+    if os.path.exists("simulation_results.csv"):
+        df = pd.read_csv("simulation_results.csv")
+        fig = px.line(df,
+                        x='Time',
+                        y='Concentration',
+                        color='Species',
+                        title=f"Concentration of Species over Time in the model",
+                        height=600,
+                        width=800
+        )
+        st.plotly_chart(fig,use_container_width = True)
+        df_pivot = df.pivot(index='Time', columns='Species', values='Concentration')
+        st.dataframe(df_pivot)
+    else:
+        st.write("No simulation results to display.")

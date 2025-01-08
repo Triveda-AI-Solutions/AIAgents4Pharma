@@ -7,7 +7,7 @@ sys.path.append(package_path)
 
 from langchain_core.runnables import Runnable
 from aiagents4pharma.agent_state import T2bState
-
+import json
 
 class AssistantBaseClass:
     def __init__(self, runnable: Runnable):
@@ -49,6 +49,9 @@ def create_tool_node_with_fallback(tools: list) -> dict:
         [RunnableLambda(handle_tool_error)], exception_key="error"
     )
 
+def tool_message_formatter(tool_output: str) -> dict:
+    return json.loads(tool_output["messages"][-1].content)
+
 from aiagents4pharma.talk2biomodels.chains import t2b_chain_with_all_tools, all_tools
 
 assistant_with_all_tools_instance = AssistantBaseClass(t2b_chain_with_all_tools)
@@ -64,13 +67,16 @@ builder = StateGraph(T2bState)
 # Define nodes: these do the work
 builder.add_node("t2b_agent", assistant_with_all_tools_instance)
 builder.add_node("tools", create_tool_node_with_fallback(all_tools))
+builder.add_node("format_message", tool_message_formatter)
+
 # Define edges: these determine how the control flow moves
 builder.add_edge(START, "t2b_agent")
-builder.add_conditional_edges(
+builder.add_edge(
     "t2b_agent",
-    tools_condition,
+    "tools",
 )
-builder.add_edge("tools", END)
+builder.add_edge("tools", "format_message")
+builder.add_edge("format_message", END)
 
 memory = MemorySaver()
 app = builder.compile(checkpointer=memory)

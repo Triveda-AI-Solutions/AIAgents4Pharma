@@ -56,24 +56,26 @@ class ModelDescriptionTool(BaseTool):
     description: str = '''A tool to ask about the description of the model.'''
     args_schema: Type[BaseModel] = ModelDescriptionInput
     return_direct: bool = True
-    st_session_key: str = None
 
     def _run(self,
              question: str,
-             sys_bio_model: ModelData = ModelData(),
+             sys_bio_model: Optional[ModelData] = None,
              run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """
         Run the tool.
 
         Args:
             question (str): The question to ask about the model description.
+            sys_bio_model (ModelData): The model data.
             run_manager (Optional[CallbackManagerForToolRun]): The CallbackManagerForToolRun object.
 
         Returns:
             str: The answer to the question.
         """
-        st_session_key = self.st_session_key
         # Check if sys_bio_model is provided in the input schema
+        # if model_id:
+        #     print (model_id, 'model_id')
+        #     model_object = BasicoModel(model_id=model_id)
         if sys_bio_model.model_id or sys_bio_model.sbml_file_path \
             or sys_bio_model.model_object not in [None, "", {}]:
             if sys_bio_model.model_id:
@@ -83,14 +85,6 @@ class ModelDescriptionTool(BaseTool):
             else:
                 print (sys_bio_model.model_object, 'model_object')
                 model_object = sys_bio_model.model_object
-            if st_session_key:
-                st.session_state[st_session_key] = model_object
-        # Check if sys_bio_model is provided in the Streamlit session state
-        elif st_session_key:
-            if st_session_key not in st.session_state:
-                return f"Session key {st_session_key} " \
-                        "not found in Streamlit session state."
-            model_object = st.session_state[st_session_key]
         else:
             return "Please provide a valid model object or Streamlit "\
                 "session key that contains the model object."
@@ -119,8 +113,11 @@ class ModelDescriptionTool(BaseTool):
         )
         parser = StrOutputParser()
         chain = prompt_template | llm | parser
-        return chain.invoke({"description": description,
-                             "question": question})
+        return {"messages" : chain.invoke({"description": description,
+                             "question": question}),
+                "model_id" : sys_bio_model.model_id,
+                "sbml_file_path": sys_bio_model.sbml_file_path
+                }
 
     def get_metadata(self):
         """

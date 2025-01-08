@@ -29,7 +29,7 @@ class SearchModelsTool(BaseTool):
     args_schema: Type[BaseModel] = SearchModelsInput
     return_direct: bool = True
 
-    def _run(self, query: str) -> str:
+    def _run(self, query: str) -> dict:
         """
         Run the tool.
 
@@ -37,7 +37,7 @@ class SearchModelsTool(BaseTool):
             query (str): The search query.
 
         Returns:
-            str: The answer to the question.
+            dict: The answer to the question in the form of a dictionary.
         """
         search_results = biomodels.search_for_model(query)
         llm = ChatOpenAI(model="gpt-4o-mini")
@@ -67,7 +67,7 @@ class SearchModelsTool(BaseTool):
         )
         parser = StrOutputParser()
         chain = prompt_template | llm | parser
-        return chain.invoke({"input": search_results})
+        return {"messages" : chain.invoke({"input": search_results})}
 
     def get_metadata(self):
         """
