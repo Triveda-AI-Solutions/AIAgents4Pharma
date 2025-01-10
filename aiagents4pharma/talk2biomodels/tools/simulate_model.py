@@ -78,7 +78,9 @@ class SimulateModelTool(BaseTool):
                 model_data: ModelData = None,
                 time_data: TimeData = None,
                 species_data: SpeciesData = None,
-                recurring_data: RecurringData = None):
+                recurring_data: RecurringData = None,
+                model_id: Optional[int] = None,
+                sbml_file_path: Optional[str] = None):
         """
         Run the tool.
 
@@ -87,13 +89,20 @@ class SimulateModelTool(BaseTool):
             time_data (Optional[TimeData]): The time data.
             species_data (Optional[SpeciesData]): The species data.
             recurring_data (Optional[RecurringData]): The recurring data.
+            model_id (Optional[int]): The model ID.
+            sbml_file_path (Optional[str]): The SBML file path.
 
         Returns:
             str: The result of the simulation.
         """
         st_session_key = self.st_session_key
         # Retrieve the model ID, duration, and interval
-        modelid = model_data.modelid if model_data is not None else None
+        if model_data is not None:
+            modelid = model_data.modelid
+        elif model_id:
+            modelid = model_id
+        else:
+            modelid = None
         duration = time_data.duration if time_data is not None else 100.0
         interval = time_data.interval if time_data is not None else 10
         # Prepare the dictionary of species data
@@ -106,10 +115,15 @@ class SimulateModelTool(BaseTool):
         # Retrieve the SBML file path from the Streamlit session state
         # otherwise retrieve it from the model_data object if the user
         # has provided it.
-        sbml_file_path = model_data.sbml_file_path if model_data is not None else None
+        if model_data is not None:
+            sbml_file_path = model_data.sbml_file_path
+        elif sbml_file_path:
+            sbml_file_path = sbml_file_path
+        else:
+            sbml_file_path = None
         if st_session_key:
-            if st_session_key not in st.session_state:
-                return f"Session key {st_session_key} not found in Streamlit session state."
+            # if st_session_key not in st.session_state:
+            #     return f"Session key {st_session_key} not found in Streamlit session state."
             if 'sbml_file_path' in st.session_state:
                 sbml_file_path = st.session_state.sbml_file_path
         # Check if both modelid and sbml_file_path are None
@@ -168,10 +182,12 @@ class SimulateModelTool(BaseTool):
         )
         # Display the plot in Streamlit
         # st.plotly_chart(fig, use_container_width = False)
+        df.to_csv('simulation_results.csv', index=False)
         if modelid is None:
             modelid = "internal"
         content = f"Simulation results for the model {modelid}."
-        return content
+        return {"messages" : content
+                }
 
     def get_metadata(self):
         """
